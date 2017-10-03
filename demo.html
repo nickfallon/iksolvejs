@@ -1,0 +1,119 @@
+
+
+<html>
+    <title>Simple IK solver nick fallon 2014</title>
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+    <body>
+
+        <div id="debug"></div>
+
+        <canvas id="canvas1"></canvas>
+
+        <script>
+
+            //mouse position
+            var mx = 0;
+            var my = 0;
+
+            var debug;
+            var canvas;
+            var ctx;
+
+            //the 3 nodes in the IK chain
+            var origin = { x: 200, y: 200 }
+            var joint = { x: 0, y: 0, len: 120 }
+            var hand = { x: 0, y: 0, len: 120 }
+
+            //draw node size
+            var nodesize = 20;
+            var halfnodesize = Math.floor(nodesize / 2);
+
+            window.onload = function () {
+                //setup canvas
+                canvas = document.getElementById("canvas1");
+                ctx = canvas.getContext("2d");
+                ctx.canvas.width = window.innerWidth;
+                ctx.canvas.height = window.innerHeight;
+
+                debug = document.getElementById('debug');
+                //listen for mouse move
+                document.addEventListener('mousemove', mousemove_event, false);
+                //start the loop
+                setInterval('theloop()', 15);
+            }
+
+            function mousemove_event(event) {
+                mx = event.clientX;
+                my = event.clientY;
+            }
+
+            function theloop() {
+
+                //solve IK
+
+                //get the distance from origin to mouse
+                var dx = mx - origin.x;
+                var dy = my - origin.y - nodesize;
+                var dist = Math.sqrt((dx*dx)+(dy*dy));
+
+                //get lengths
+                var a = hand.len;
+                var b = dist;
+                var c = joint.len;
+                //if mouse is too far away, pretend it's within range
+                if (b > a + c) {
+                    b = a + c;
+                }
+
+                //solve the IK chain using the cosine rule
+                //angle from the origin to the mouse
+                var a0 = Math.atan2(dy, dx);
+                //angle from origin to joint
+                var a1 = Math.acos(((b * b) + (c * c) - (a * a)) / (2 * b * c));
+                //angle of joint to hand
+                var a2 = Math.acos(((a * a) + (b * b) - (c * c)) / (2 * a * b));
+                
+                //calc position of joint (a0 + a1)
+                joint.x = origin.x + (Math.cos(a0 + a1) * joint.len);
+                joint.y = origin.y + (Math.sin(a0 + a1) * joint.len);
+                //calc position of hand (a0 - a2)
+                hand.x = joint.x + (Math.cos(a0 - a2) * hand.len);
+                hand.y = joint.y + (Math.sin(a0 - a2) * hand.len);
+                
+                //debug info
+                debug.innerHTML = 'IK Solver | a0: ' + a0 +  ' | a1: ' + a1 + ' | a2: ' + a2;
+
+                //clear canvas and set color
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = "#FF0000";
+                //render origin               
+                ctx.fillRect(origin.x - halfnodesize, origin.y - halfnodesize, nodesize, nodesize);                             
+                //render joint
+                ctx.fillRect(joint.x - halfnodesize, joint.y - halfnodesize, nodesize, nodesize);
+                //render hand
+                ctx.fillRect(hand.x - halfnodesize, hand.y - halfnodesize, nodesize, nodesize);
+                //render line for origin-joint
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(origin.x, origin.y);
+                ctx.lineTo(joint.x, joint.y);
+                ctx.stroke();
+                //render line for joint-hand
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(joint.x, joint.y);
+                ctx.lineTo(hand.x, hand.y);               
+                ctx.stroke();
+          
+
+            }
+            
+        </script>
+    </body>
+</html>
+
