@@ -1,2 +1,2 @@
 # iksolvejs
-Simple IK solver for Javascript
+Simple IK solver for Javascript using cosine rule
